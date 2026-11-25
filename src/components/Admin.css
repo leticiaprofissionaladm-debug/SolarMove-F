@@ -7,16 +7,22 @@
 ========================================= */
 
 .admin {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
-  padding: 36px 5%;
+  padding: clamp(20px, 4vw, 36px) clamp(12px, 4vw, 5%);
   background: #F3EFE6;
   color: #2E3514;
   font-family: 'DM Sans', sans-serif;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
-.admin * {
+.admin *,
+.admin *::before,
+.admin *::after {
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .admin h2,
@@ -24,12 +30,13 @@
 .admin h4,
 .admin p {
   margin-top: 0;
+  overflow-wrap: break-word;
 }
 
 .admin h2 {
   margin-bottom: 6px;
   font-family: 'Marcellus', serif;
-  font-size: clamp(26px, 3.2vw, 34px);
+  font-size: clamp(22px, 3.2vw, 34px);
   font-weight: 400;
   color: #2E3514;
   letter-spacing: -0.3px;
@@ -38,7 +45,7 @@
 .admin h3 {
   color: #2E3514;
   font-family: 'Marcellus', serif;
-  font-size: 20px;
+  font-size: clamp(18px, 2vw, 20px);
   font-weight: 400;
 }
 
@@ -54,7 +61,7 @@
   color: #A58A54;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 2.2px;
   text-transform: uppercase;
 }
 
@@ -67,8 +74,9 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
   min-height: 40px;
-  padding: 9px 18px;
+  padding: 9px 16px;
   border: 1px solid #C5A467;
   border-radius: 6px;
   background: #FFFFFF;
@@ -77,6 +85,7 @@
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
+  text-align: center;
   cursor: pointer;
   transition: all 0.22s ease;
 }
@@ -92,8 +101,9 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
   min-height: 44px;
-  padding: 12px 24px;
+  padding: 12px 20px;
   border: 1px solid #C5A467;
   border-radius: 6px;
   background: #C5A467;
@@ -102,6 +112,7 @@
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  text-align: center;
   cursor: pointer;
   transition: all 0.22s ease;
 }
@@ -134,6 +145,7 @@
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
   gap: 32px;
+  width: 100%;
   max-width: 1520px;
   margin: 0 auto;
   align-items: start;
@@ -143,6 +155,8 @@
 .admin-sidebar {
   position: sticky;
   top: 24px;
+  width: 100%;
+  max-width: 100%;
   padding: 28px 18px;
   border-radius: 12px;
   background: #2E3514;
@@ -171,6 +185,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
@@ -259,6 +274,7 @@
   color: #C5A467;
   font-size: 11px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .admin-sidebar-nav button.active small {
@@ -285,6 +301,7 @@
   font-size: 12.5px;
   font-weight: 600;
   text-decoration: none;
+  text-align: center;
   transition: all 0.2s ease;
 }
 
@@ -298,6 +315,8 @@
 ========================================= */
 
 .admin-main {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -322,15 +341,15 @@
 
 .admin-metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
   margin-bottom: 26px;
 }
 
 .admin-metric-card {
   position: relative;
   min-width: 0;
-  padding: 22px 24px;
+  padding: 20px;
   border: 1px solid #E5DEC9;
   border-top: 3px solid #C5A467;
   border-radius: 10px;
@@ -356,10 +375,10 @@
   display: block;
   color: #2E3514;
   font-family: 'Marcellus', serif;
-  font-size: clamp(22px, 2.2vw, 28px);
+  font-size: clamp(20px, 2.2vw, 28px);
   font-weight: 400;
   line-height: 1.2;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .admin-metric-card small {
@@ -376,8 +395,10 @@
 
 .admin-content-card,
 .admin-products {
+  width: 100%;
+  max-width: 100%;
   margin-bottom: 24px;
-  padding: 26px 28px;
+  padding: clamp(16px, 3vw, 28px);
   border: 1px solid #E5DEC9;
   border-radius: 10px;
   background: #FFFFFF;
@@ -408,7 +429,7 @@
 }
 
 .admin-empty-state {
-  padding: 36px 20px;
+  padding: 28px 16px;
   border: 1px dashed #DCD4C0;
   border-radius: 8px;
   background: #FAF8F3;
@@ -420,7 +441,9 @@
 
 .admin-table-wrap {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #EAE4D7;
   border-radius: 8px;
 }
@@ -433,7 +456,7 @@
 
 .admin-table th,
 .admin-table td {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid #EEE9E1;
   color: #2E3514;
   font-size: 13px;
@@ -479,7 +502,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 8px 15px;
   padding: 14px 0;
   border-bottom: 1px solid #EEE9E1;
 }
@@ -513,9 +537,10 @@
 .a-form {
   display: grid;
   gap: 14px;
+  width: 100%;
   max-width: 780px;
   margin: 22px 0 34px;
-  padding: 28px;
+  padding: clamp(16px, 3vw, 28px);
   border: 1px solid #E2DBC9;
   border-radius: 10px;
   background: #FAF8F3;
@@ -523,7 +548,7 @@
 
 .a-form h3 {
   margin-bottom: 6px;
-  font-size: 22px;
+  font-size: clamp(19px, 2.2vw, 22px);
 }
 
 .a-form label {
@@ -537,6 +562,7 @@
 .admin textarea,
 .admin select {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   padding: 12px 14px;
   border: 1px solid #D5CCB8;
@@ -579,7 +605,7 @@
 .stock-editor,
 .admin-gallery-editor,
 .admin-size-guide {
-  padding: 20px;
+  padding: clamp(14px, 2.5vw, 20px);
   margin: 8px 0;
   border: 1px solid #E2DBC9;
   border-radius: 8px;
@@ -619,19 +645,20 @@
   height: 16px;
   border: 1px solid #C8C0AE;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .stock-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
 }
 
 .stock-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #EAE4D7;
   border-radius: 6px;
   background: #FAF8F3;
@@ -647,8 +674,8 @@
 /* GALERIA DE FOTOS DO PRODUTO */
 .admin-gallery-preview {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 12px;
   margin: 16px 0 10px;
 }
 
@@ -664,7 +691,7 @@
 
 .admin-gallery-item img {
   width: 100%;
-  height: 140px;
+  height: 130px;
   object-fit: cover;
   display: block;
 }
@@ -730,8 +757,9 @@
 .a-row {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 16px;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px;
   margin-bottom: 12px;
   border: 1px solid #EAE4D7;
   border-radius: 8px;
@@ -745,12 +773,13 @@
 }
 
 .a-row > div:nth-child(2) {
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 0;
 }
 
 .d-thumb {
-  width: 68px;
-  height: 82px;
+  width: 64px;
+  height: 78px;
   flex-shrink: 0;
   border-radius: 6px;
   border: 1px solid #E2DBC9;
@@ -767,6 +796,7 @@
   margin-bottom: 4px;
   color: #2E3514;
   font-size: 15px;
+  overflow-wrap: break-word;
 }
 
 .admin-product-info small {
@@ -774,6 +804,7 @@
   margin-top: 3px;
   color: #6B6859;
   font-size: 12.5px;
+  overflow-wrap: break-word;
 }
 
 .admin .link {
@@ -804,7 +835,7 @@
 }
 
 .admin-order-card {
-  padding: 24px;
+  padding: clamp(16px, 3vw, 24px);
   border: 1px solid #E5DEC9;
   border-radius: 10px;
   background: #FAF8F3;
@@ -815,7 +846,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 12px;
   padding-bottom: 16px;
   border-bottom: 1px solid #E5DEC9;
 }
@@ -836,7 +867,7 @@
 .admin-order-total {
   color: #2E3514;
   font-family: 'Marcellus', serif;
-  font-size: 24px;
+  font-size: clamp(20px, 2.5vw, 24px);
   font-weight: 400;
 }
 
@@ -883,7 +914,8 @@
 .admin-order-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 14px;
   padding: 12px 0;
 }
 
@@ -892,8 +924,8 @@
 }
 
 .admin-order-item img {
-  width: 66px;
-  height: 80px;
+  width: 62px;
+  height: 76px;
   flex-shrink: 0;
   border-radius: 6px;
   object-fit: cover;
@@ -902,6 +934,7 @@
 .admin-order-item-info {
   display: flex;
   flex-direction: column;
+  flex: 1 1 180px;
   gap: 4px;
   min-width: 0;
 }
@@ -927,10 +960,10 @@
 
 .admin-order-status {
   display: flex;
-  flex: 1;
+  flex: 1 1 200px;
   flex-direction: column;
   gap: 6px;
-  min-width: 220px;
+  min-width: 0;
 }
 
 .admin-order-status label {
@@ -973,18 +1006,21 @@
 ========================================= */
 
 .admin-login-wrapper {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: clamp(16px, 4vw, 24px);
   background: #2E3514;
+  overflow-x: clip;
 }
 
 .admin-login-box {
   width: 100%;
   max-width: 420px;
-  padding: 40px 34px;
+  padding: clamp(24px, 5vw, 40px) clamp(18px, 4vw, 34px);
   border: 1px solid rgba(197, 164, 103, 0.4);
   border-radius: 14px;
   background: #FAF8F3;
@@ -994,12 +1030,12 @@
 
 .admin-login-box .admin-logo-wrap {
   margin: 0 auto 18px;
-  width: 92px;
-  height: 92px;
+  width: 84px;
+  height: 84px;
 }
 
 .admin-login-box h2 {
-  font-size: 26px;
+  font-size: clamp(22px, 4vw, 26px);
   margin-bottom: 6px;
 }
 
@@ -1069,31 +1105,37 @@
 
 @media (max-width: 768px) {
   .admin {
-    padding: 24px 16px;
+    padding: 18px 12px;
   }
 
   .admin-shell {
     display: block;
+    width: 100%;
   }
 
   .admin-sidebar {
     position: static;
-    margin-bottom: 24px;
-    padding: 20px 16px;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 16px 12px;
   }
 
   .admin-sidebar-brand {
     flex-direction: row;
     text-align: left;
-    gap: 14px;
-    padding-bottom: 16px;
+    gap: 12px;
+    padding: 0 4px 14px;
   }
 
   .admin-logo-wrap {
-    width: 54px;
-    height: 54px;
+    width: 50px;
+    height: 50px;
     margin-bottom: 0;
     flex-shrink: 0;
+  }
+
+  .admin-sidebar-label {
+    margin: 14px 4px 8px;
   }
 
   .admin-sidebar-nav {
@@ -1101,11 +1143,15 @@
     gap: 8px;
     padding-bottom: 6px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-sidebar-nav button {
     flex: 0 0 auto;
     width: auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 13px;
     white-space: nowrap;
   }
 
@@ -1116,7 +1162,7 @@
 
   .admin-content-card,
   .admin-products {
-    padding: 20px;
+    padding: 16px 14px;
   }
 
   .admin-order-customer {
@@ -1125,5 +1171,32 @@
 
   .a-row {
     flex-wrap: wrap;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin {
+    padding: 14px 10px;
+  }
+
+  .admin-page-heading > .ghost,
+  .admin-page-heading > .solar-button,
+  .admin-section-heading > .ghost,
+  .admin-section-heading > .solar-button,
+  .admin-top > .ghost,
+  .admin-top > .solar-button,
+  .admin-form-actions > .ghost,
+  .admin-form-actions > .solar-button,
+  .admin .admin-order-delete {
+    width: 100%;
+  }
+
+  .a-row > button,
+  .a-row > .ghost,
+  .a-row > .solar-button,
+  .a-row > .link {
+    width: 100%;
+    text-align: center;
   }
 }
