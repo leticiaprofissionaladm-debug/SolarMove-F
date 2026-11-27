@@ -1,4 +1,3 @@
-
 import { apiRequest } from './api'
 
 export type CreateOrderData = {
@@ -121,4 +120,14 @@ export async function updatePaymentStatus(
     },
     'admin',
   ) as Promise<ApiOrder>
+}
+
+export async function deleteOrder(id: string) {
+  return apiRequest(
+    `/orders/${id}`,
+    {
+      method: 'DELETE',
+    },
+    'admin',
+  )
 }
