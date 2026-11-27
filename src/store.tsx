@@ -29,6 +29,7 @@ import {
     getAllOrders as getAllOrdersApi,
     updateOrderStatus as updateOrderStatusApi,
     updatePaymentStatus as updatePaymentStatusApi,
+    deleteOrder as deleteOrderApi,
     type ApiOrder,
   } from './services/orders'
   
@@ -275,7 +276,7 @@ import {
     loadAllOrders: () => Promise<void>
     updateOrderStatus: (id: string, status: OrderStatus) => Promise<boolean>
     updatePaymentStatus: (id: string, status: PaymentStatus) => Promise<boolean>
-    removeOrder: (id: string) => void
+    removeOrder: (id: string) => Promise<boolean>
   
     customers: CustomerAccount[]
     currentCustomer: CustomerSession | null
@@ -803,8 +804,25 @@ import {
         }
       },
   
-      removeOrder: id => {
-        setOrders(current => current.filter(item => item.id !== id && item.code !== id))
+      removeOrder: async id => {
+        try {
+          const found = orders.find(o => o.id === id || o.code === id)
+          const targetId = found?.id ?? id
+  
+          await deleteOrderApi(targetId)
+          setOrders(current =>
+            current.filter(item => item.id !== targetId && item.code !== id)
+          )
+          await refreshProducts()
+          return true
+        } catch (error) {
+          alert(
+            error instanceof Error
+              ? error.message
+              : 'Não foi possível excluir o pedido.'
+          )
+          return false
+        }
       },
     }
   
