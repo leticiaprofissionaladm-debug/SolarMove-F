@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import React from 'react'
 import { useStore, brl, stockKey } from '../store'
 import type { Product, Color, OrderStatus } from '../store'
-import AdminCustomers from '../pages/AdminCustomers' 
+import AdminCustomers from '../pages/AdminCustomers'
 import { getCategories } from '../services/categories'
 import type { Category } from '../services/categories'
 import { adminLogin } from '../services/auth'
@@ -120,7 +120,12 @@ export default function Admin({ onBackToStore }: AdminProps) {
     const hasAdminToken = Boolean(sessionStorage.getItem('sm-admin-token'))
     if (!ok && !isAdminAuthenticated && !hasAdminToken) return
 
-    if (activeTab === 'pedidos' || activeTab === 'visao-geral' || activeTab === 'financeiro' || activeTab === 'relatorios') {
+    if (
+      activeTab === 'pedidos' ||
+      activeTab === 'visao-geral' ||
+      activeTab === 'financeiro' ||
+      activeTab === 'relatorios'
+    ) {
       loadAllOrders().catch(error => {
         console.error('Erro ao carregar pedidos:', error)
       })
@@ -695,12 +700,29 @@ export default function Admin({ onBackToStore }: AdminProps) {
   }
 
   // EXCLUIR PEDIDO
-  const deleteOrder = (id: string, label?: string) => {
+  const deleteOrder = async (id: string, label?: string) => {
     if (!confirm(`Deseja excluir o pedido ${label || id}?`)) {
       return
     }
 
-    removeOrder(id)
+    try {
+      const removed = await removeOrder(id)
+
+      if (removed === false) {
+        alert('Não foi possível excluir o pedido.')
+        return
+      }
+
+      await loadAllOrders()
+      alert('Pedido excluído com sucesso!')
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error)
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível excluir o pedido.'
+      )
+    }
   }
 
   // MENU ADMINISTRATIVO
@@ -1847,7 +1869,6 @@ export default function Admin({ onBackToStore }: AdminProps) {
 
           {/* CLIENTES */}
           {activeTab === 'clientes' && <AdminCustomers />}
-        
 
           {/* RELATÓRIOS */}
           {activeTab === 'relatorios' && (
