@@ -5,7 +5,7 @@ export default async function handler(req: any, res: any) {
     const items = Array.isArray(req.body?.items) ? req.body.items : []
     if (!items.length) return res.status(400).json({ error: 'Sacola vazia' })
     const origin = `https://${req.headers.host}`
-    const r = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const r = await fetch('POST https://sandbox.api.pagseguro.com/checkouts', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

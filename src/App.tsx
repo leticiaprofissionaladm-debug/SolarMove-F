@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import React from 'react'
 import './App.css'
+
 import LooksBanner from './components/LooksBanner'
 import Catalog from './components/Catalog'
 import CartDrawer from './components/CartDrawer'
@@ -7,57 +9,226 @@ import Admin from './components/Admin'
 import Institutional from './components/Institutional'
 import Login from './components/auth/Login'
 import Register from './components/auth/Register'
-import AccessibilityWidget from './components/AccessibilityWidget'
 import ForgotPassword from './components/auth/ForgotPassword'
-import { StoreProvider, useStore, WHATSAPP, INSTAGRAM } from './store'
-import React from 'react'
+import AccessibilityWidget from './components/AccessibilityWidget'
+
+import {
+  StoreProvider,
+  useStore,
+  brl,
+  WHATSAPP,
+  INSTAGRAM,
+} from './store'
+import type { OrderStatus } from './store'
+
+const customerOrderStatusLabels: Record<OrderStatus, string> = {
+  aguardando_confirmacao: 'Aguardando confirmação',
+  aguardando_pagamento: 'Aguardando pagamento',
+  pago: 'Pago',
+  em_preparacao: 'Em preparação',
+  enviado: 'Enviado',
+  entregue: 'Entregue',
+  cancelado: 'Cancelado',
+}
+
+function clearHashCleanly() {
+  window.history.replaceState(
+    null,
+    '',
+    window.location.pathname + window.location.search
+  )
+}
 
 function Shell() {
-  const { cart, favs } = useStore()
+  const {
+    cart,
+    favs,
+    orders,
+    loadMyOrders,
+    currentCustomer,
+    isAdminAuthenticated,
+    loginUserAccount,
+    registerCustomer,
+    registerAdmin,
+    logoutCustomer,
+  } = useStore()
+
   const [authPage, setAuthPage] = useState<
     'login' | 'register' | 'forgot' | null
   >(null)
+
+  const [registerRole, setRegisterRole] = useState<'CUSTOMER' | 'ADMIN'>(
+    'CUSTOMER'
+  )
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [ordersOpen, setOrdersOpen] = useState(false)
   const [onlyFavs, setOnlyFavs] = useState(false)
-  const [admin, setAdmin] = useState(location.hash === '#admin')
+  const [viewingStore, setViewingStore] = useState(false)
+
+  const [admin, setAdmin] = useState(
+    () => window.location.hash === '#admin'
+  )
 
   const close = () => setMenuOpen(false)
-  const count = cart.reduce((s, c) => s + c.qty, 0)
+
+  const count = cart.reduce((sum, item) => sum + item.qty, 0)
+
+  const myOrders = currentCustomer
+    ? [...orders].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      )
+    : []
 
   const wa = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
     'Olá! Vim pelo site da Solar Move.'
   )}`
 
   useEffect(() => {
-    const h = () => setAdmin(location.hash === '#admin')
-    window.addEventListener('hashchange', h)
+    if (!currentCustomer) return
 
-    return () => window.removeEventListener('hashchange', h)
+    loadMyOrders().catch(error => {
+      console.error('Erro ao carregar pedidos da cliente:', error)
+    })
+  }, [currentCustomer])
+
+  useEffect(() => {
+    if (
+      isAdminAuthenticated &&
+      window.location.hash === '#admin' &&
+      !viewingStore
+    ) {
+      setAdmin(true)
+      setAuthPage(null)
+    }
+  }, [isAdminAuthenticated, viewingStore])
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const isAdminHash = window.location.hash === '#admin'
+      if (isAdminHash) {
+        setViewingStore(false)
+        setAdmin(true)
+        setAuthPage(null)
+      } else {
+        setAdmin(false)
+      }
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange)
+    }
   }, [])
 
-  // Abre a sacola/finalização do pedido quando clicar em "Comprar agora" no produto
   useEffect(() => {
     const handleOpenCheckout = () => {
       setCartOpen(true)
     }
 
     window.addEventListener('solar-open-checkout', handleOpenCheckout)
+
     return () => {
-      window.removeEventListener('solar-open-checkout', handleOpenCheckout)
+      window.removeEventListener(
+        'solar-open-checkout',
+        handleOpenCheckout
+      )
     }
   }, [])
 
-  if (admin) return <Admin />
+  const applyAuthResult = (result: {
+    success: boolean
+    message: string
+    role?: 'ADMIN' | 'CUSTOMER'
+  }) => {
+    if (!result.success) {
+      alert(result.message)
+      return
+    }
+
+    setAuthPage(null)
+
+    if (result.role === 'ADMIN') {
+      setViewingStore(false)
+      window.location.hash = '#admin'
+      setAdmin(true)
+      alert(result.message)
+      return
+    }
+
+    setViewingStore(false)
+    clearHashCleanly()
+    setAdmin(false)
+    alert(result.message)
+  }
+
+  const handleLogin = async (email: string, password: string) => {
+    const result = await loginUserAccount(email, password)
+    applyAuthResult(result)
+  }
+
+  const handleRegister = async (data: {
+    name: string
+    email: string
+    phone: string
+    password: string
+  }) => {
+    const result =
+      registerRole === 'ADMIN'
+        ? await registerAdmin(data)
+        : await registerCustomer(data)
+
+    applyAuthResult(result)
+  }
+
+  const handleForgotPassword = (_email: string) => {
+    alert(
+      'A recuperação de senha ainda precisa ser configurada no backend.'
+    )
+  }
+
+  const handleExitAdmin = () => {
+    clearHashCleanly()
+    setAdmin(false)
+    setViewingStore(true)
+  }
+
+  const handleOpenAdminFromStore = () => {
+    setViewingStore(false)
+    setAuthPage(null)
+    setAdmin(true)
+    if (window.location.hash !== '#admin') {
+      window.location.hash = '#admin'
+    }
+  }
+
+  const handleOpenMyOrders = () => {
+    setOrdersOpen(true)
+    if (currentCustomer) {
+      loadMyOrders().catch(error => {
+        console.error('Erro ao atualizar meus pedidos:', error)
+      })
+    }
+  }
+
+  if (admin && !viewingStore) {
+    return <Admin onBackToStore={handleExitAdmin} />
+  }
+
   if (authPage === 'login') {
     return (
       <Login
-        onRegister={() => setAuthPage('register')}
+        onLogin={handleLogin}
+        onRegister={() => {
+          setRegisterRole('CUSTOMER')
+          setAuthPage('register')
+        }}
         onForgotPassword={() => setAuthPage('forgot')}
         onBack={() => setAuthPage(null)}
-        onLogin={() => {
-          alert('O login será ativado quando conectarmos o backend.')
-        }}
       />
     )
   }
@@ -65,11 +236,9 @@ function Shell() {
   if (authPage === 'register') {
     return (
       <Register
+        onRegister={handleRegister}
         onLogin={() => setAuthPage('login')}
         onBack={() => setAuthPage(null)}
-        onRegister={() => {
-          alert('O cadastro será ativado quando conectarmos o backend.')
-        }}
       />
     )
   }
@@ -78,17 +247,16 @@ function Shell() {
     return (
       <ForgotPassword
         onLogin={() => setAuthPage('login')}
-        onBack={() => setAuthPage(null)}
-        onSubmitEmail={() => {
-          alert('A recuperação por e-mail será ativada no backend.')
-        }}
+        onBack={() => setAuthPage('login')}
+        onSubmitEmail={handleForgotPassword}
       />
     )
   }
+
   return (
     <>
       <header className="solar-header">
-        <a href="/" className="solar-brand" aria-label="Solar Move">
+        <a href="#inicio" className="solar-brand" aria-label="Solar Move">
           <img src="/logo.jpg" alt="Solar Move, moda fitness" />
         </a>
 
@@ -100,7 +268,6 @@ function Shell() {
         </nav>
 
         <div className="header-actions">
-
           <a
             href="#colecao"
             className="icon-btn"
@@ -125,16 +292,48 @@ function Shell() {
           >
             ☰
           </button>
-          <button
-            className="icon-btn"
-            onClick={() => setAuthPage('login')}
-          >
-            Minha conta
-          </button>
 
-          <a href="#admin" className="icon-btn">
-            Administração
-          </a>
+          {isAdminAuthenticated ? (
+            <button
+              className="icon-btn"
+              type="button"
+              onClick={handleOpenAdminFromStore}
+              title="Voltar ao painel administrativo"
+            >
+              Painel Admin
+            </button>
+          ) : currentCustomer ? (
+            <>
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={handleOpenMyOrders}
+              >
+                Meus pedidos <b>{myOrders.length}</b>
+              </button>
+
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => {
+                  setOrdersOpen(false)
+                  logoutCustomer()
+                  alert('Você saiu da sua conta.')
+                }}
+                title="Sair da conta"
+              >
+                Sair ({currentCustomer.name.split(' ')[0]})
+              </button>
+            </>
+          ) : (
+            <button
+              className="icon-btn"
+              type="button"
+              onClick={() => setAuthPage('login')}
+            >
+              Minha conta
+            </button>
+          )}
         </div>
       </header>
 
@@ -200,14 +399,15 @@ function Shell() {
           <a href="#colecao" className="cta-button">
             Explorar coleção
           </a>
-
         </section>
-        <Institutional />
 
+        <Institutional />
 
         {/* CONTATO */}
         <section id="contato" className="contact-section">
-          <span className="contact-eyebrow">ESTAMOS AQUI PARA VOCÊ</span>
+          <span className="contact-eyebrow">
+            ESTAMOS AQUI PARA VOCÊ
+          </span>
 
           <h2>Vamos conversar?</h2>
 
@@ -239,11 +439,8 @@ function Shell() {
       </main>
 
       {/* RODAPÉ */}
-
-      {/* RODAPÉ SOLAR MOVE */}
       <footer className="sm-footer">
         <div className="sm-footer-content">
-
           <div className="sm-footer-brand">
             <a href="#inicio" aria-label="Voltar ao início">
               <img src="/logo.jpg" alt="Solar Move" />
@@ -273,25 +470,20 @@ function Shell() {
             <h3>ATENDIMENTO</h3>
             <a href="#perguntas-frequentes">Perguntas frequentes</a>
             <a href="#contato">Fale conosco</a>
-            <a
-              href={wa}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={wa} target="_blank" rel="noreferrer">
               WhatsApp
             </a>
           </div>
-
         </div>
 
         <div className="sm-footer-bottom">
           <span>
             © {new Date().getFullYear()} Solar Move. Todos os direitos reservados.
           </span>
+
           <a href="#inicio">Voltar ao início ↑</a>
         </div>
       </footer>
-
 
       <a
         className="wa-float"
@@ -307,6 +499,136 @@ function Shell() {
         onClose={() => setCartOpen(false)}
         onOpen={() => setCartOpen(true)}
       />
+
+      {ordersOpen && currentCustomer && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            zIndex: 999,
+          }}
+          onClick={() => setOrdersOpen(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              color: '#18181b',
+              width: '100%',
+              maxWidth: 640,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              borderRadius: 12,
+              padding: 24,
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 16,
+                borderBottom: '1px solid #e4e4e7',
+                paddingBottom: 12,
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0 }}>Meus pedidos</h3>
+                <small style={{ color: '#52525b' }}>
+                  {currentCustomer.name}
+                </small>
+              </div>
+
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => setOrdersOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+
+            {myOrders.length === 0 ? (
+              <p style={{ color: '#52525b', margin: '16px 0' }}>
+                Você ainda não realizou nenhum pedido por aqui.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {myOrders.map(order => (
+                  <article
+                    key={order.id}
+                    style={{
+                      border: '1px solid #e4e4e7',
+                      borderRadius: 10,
+                      padding: 14,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        gap: 8,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <strong>{order.code || order.id}</strong>
+                      <span>
+                        {customerOrderStatusLabels[order.status] ??
+                          order.status}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: '#52525b',
+                        marginBottom: 10,
+                      }}
+                    >
+                      {new Date(order.createdAt).toLocaleString('pt-BR')} ·{' '}
+                      <strong>{brl(order.total)}</strong>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                        fontSize: 14,
+                      }}
+                    >
+                      {order.items.map((item, idx) => (
+                        <div
+                          key={`${item.productId}-${item.color}-${item.size}-${idx}`}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                          }}
+                        >
+                          <span>
+                            {item.qty}x {item.productName} ({item.color},{' '}
+                            {item.size})
+                          </span>
+                          <span>{brl(item.price * item.qty)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -317,6 +639,7 @@ export default function App() {
       <StoreProvider>
         <Shell />
       </StoreProvider>
+
       <AccessibilityWidget />
     </>
   )

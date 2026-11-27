@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import React from 'react'
 import { useStore, brl, avg, WHATSAPP, stockKey } from '../store'
@@ -12,7 +13,11 @@ function FilterIcon({ size = 16 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
-      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+      }}
     >
       <path
         d="M3 5H21L14 13.2V19L10 21V13.2L3 5Z"
@@ -68,11 +73,24 @@ function Modal({
   onClose: () => void
   onBuyNow?: () => void
 }) {
-  const { addToCart, addReview, favs, toggleFav, orders, currentCustomer } =
-    useStore()
+  const {
+    addToCart,
+    addReview,
+    favs,
+    toggleFav,
+    orders,
+    currentCustomer,
+  } = useStore()
 
-  const [color, setColor] = useState(p.colors[0]?.name ?? '')
-  const [size, setSize] = useState(p.sizes[0] ?? '')
+  // Proteção para campos que podem vir null da API
+  const colors = p.colors ?? []
+  const sizes = p.sizes ?? []
+  const reviews = p.reviews ?? []
+  const stock = p.stock ?? {}
+  const productImages = p.images ?? []
+
+  const [color, setColor] = useState(colors[0]?.name ?? '')
+  const [size, setSize] = useState(sizes[0] ?? '')
   const [added, setAdded] = useState(false)
   const [selectedImage, setSelectedImage] = useState(0)
 
@@ -99,7 +117,7 @@ function Modal({
 
   const images = Array.from(
     new Set(
-      [...(p.images ?? []), p.image]
+      [...productImages, p.image]
         .filter((img): img is string => typeof img === 'string')
         .map(img => img.trim())
         .filter(img => img.length > 0)
@@ -108,7 +126,7 @@ function Modal({
 
   const currentImage = images[selectedImage] ?? p.image
 
-  const available = p.stock?.[stockKey(color, size)] ?? 0
+  const available = stock[stockKey(color, size)] ?? 0
   const hasStock = available > 0
 
   const wa = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
@@ -265,8 +283,8 @@ function Modal({
           <div className="m-rate">
             <Stars value={avg(p)} />
             <small>
-              {p.reviews.length
-                ? `${avg(p).toFixed(1)} (${p.reviews.length})`
+              {reviews.length
+                ? `${avg(p).toFixed(1)} (${reviews.length})`
                 : 'Sem avaliações'}
             </small>
           </div>
@@ -276,14 +294,14 @@ function Modal({
           <p>{p.description}</p>
 
           {/* CORES */}
-          {p.colors.length > 0 && (
+          {colors.length > 0 && (
             <>
               <b>Cor: {color}</b>
 
               <div className="opts">
-                {p.colors.map(c => {
-                  const colorHasStock = p.sizes.some(
-                    s => (p.stock?.[stockKey(c.name, s)] ?? 0) > 0
+                {colors.map(c => {
+                  const colorHasStock = sizes.some(
+                    s => (stock[stockKey(c.name, s)] ?? 0) > 0
                   )
 
                   return (
@@ -308,13 +326,13 @@ function Modal({
           )}
 
           {/* TAMANHOS */}
-          {p.sizes.length > 0 && (
+          {sizes.length > 0 && (
             <>
               <b>Tamanho</b>
 
               <div className="opts">
-                {p.sizes.map(s => {
-                  const quantity = p.stock?.[stockKey(color, s)] ?? 0
+                {sizes.map(s => {
+                  const quantity = stock[stockKey(color, s)] ?? 0
                   const unavailable = quantity <= 0
 
                   return (
@@ -401,7 +419,7 @@ function Modal({
             </a>
           </div>
 
-          {/* AVALIAÇÕES: FORMULÁRIO APENAS QUEM RECEBEU O PEDIDO */}
+          {/* AVALIAÇÕES */}
           <h4>Comentários de clientes</h4>
 
           {canReview ? (
@@ -416,9 +434,7 @@ function Modal({
 
               <Stars
                 value={rv.rating}
-                onPick={n =>
-                  setRv({ ...rv, rating: n })
-                }
+                onPick={n => setRv({ ...rv, rating: n })}
               />
 
               <textarea
@@ -448,11 +464,12 @@ function Modal({
                 border: '1px solid #e9e7df',
               }}
             >
-              Avaliações liberadas apenas para clientes que já receberam o pedido em casa.
+              Avaliações liberadas apenas para clientes que já receberam o
+              pedido em casa.
             </p>
           )}
 
-          {p.reviews.map((r, i) => (
+          {reviews.map((r, i) => (
             <div className="rv" key={i}>
               <Stars value={r.rating} />
               <b>{r.name}</b>
@@ -489,16 +506,23 @@ export default function Catalog({
   const [priceRange, setPriceRange] = useState<PriceFilter>('all')
   const [openId, setOpenId] = useState<string | null>(null)
 
+  // Proteção para produtos e campos que podem vir null da API
+  const safeProducts = products ?? []
+  const safeFavs = favs ?? []
+
   const cats = [
     'Todos',
     ...Array.from(
-      new Set(products.map(p => p.category).filter(Boolean))
+      new Set(safeProducts.map(p => p.category).filter(Boolean))
     ),
   ]
 
   const uniqueColors = Array.from(
     new Map(
-      products.flatMap(p => p.colors ?? []).map(c => [c.name, c])
+      safeProducts
+        .flatMap(p => p.colors ?? [])
+        .filter(Boolean)
+        .map(c => [c.name, c])
     ).values()
   )
 
@@ -509,14 +533,19 @@ export default function Catalog({
     return true
   }
 
-  const list = products.filter(p => {
+  const list = safeProducts.filter(p => {
     const matchesCat = cat === 'Todos' || p.category === cat
-    const matchesFav = !onlyFavs || favs.includes(p.id)
+    const matchesFav = !onlyFavs || safeFavs.includes(p.id)
     const matchesColor =
       selectedColor === 'Todas' ||
-      p.colors.some(c => c.name === selectedColor)
+      (p.colors ?? []).some(c => c.name === selectedColor)
 
-    return matchesCat && matchesFav && matchesColor && matchesPrice(p.price)
+    return (
+      matchesCat &&
+      matchesFav &&
+      matchesColor &&
+      matchesPrice(p.price)
+    )
   })
 
   const activeFilterCount =
@@ -531,7 +560,7 @@ export default function Catalog({
     setOnlyFavs(false)
   }
 
-  const open = products.find(p => p.id === openId)
+  const open = safeProducts.find(p => p.id === openId)
 
   return (
     <section id="colecao" className="collection-section">
@@ -541,7 +570,7 @@ export default function Catalog({
         Peças para o treino e para o resto do dia.
       </p>
 
-      {/* BARRA PRINCIPAL: BOTÃO FILTRO (CLICA E ABRE AS OPÇÕES) + FAVORITOS */}
+      {/* BARRA PRINCIPAL */}
       <div className="chips">
         <button
           type="button"
@@ -556,6 +585,7 @@ export default function Catalog({
         >
           <FilterIcon size={15} />
           <span>Filtro</span>
+
           {activeFilterCount > 0 && (
             <span
               style={{
@@ -570,7 +600,10 @@ export default function Catalog({
               {activeFilterCount}
             </span>
           )}
-          <span style={{ fontSize: 11 }}>{filterOpen ? '▲' : '▼'}</span>
+
+          <span style={{ fontSize: 11 }}>
+            {filterOpen ? '▲' : '▼'}
+          </span>
         </button>
 
         <button
@@ -578,7 +611,7 @@ export default function Catalog({
           className={onlyFavs ? 'on' : ''}
           onClick={() => setOnlyFavs(!onlyFavs)}
         >
-          ♥ Favoritos ({favs.length})
+          ♥ Favoritos ({safeFavs.length})
         </button>
 
         {(activeFilterCount > 0 || onlyFavs) && (
@@ -601,7 +634,7 @@ export default function Catalog({
         )}
       </div>
 
-      {/* OPÇÕES QUE APARECEM AO CLICAR EM FILTRO */}
+      {/* OPÇÕES DE FILTRO */}
       {filterOpen && (
         <div
           style={{
@@ -614,11 +647,26 @@ export default function Catalog({
             gap: 14,
           }}
         >
-          {/* MODELO / CATEGORIA */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#2e3514', minWidth: 72 }}>
+          {/* CATEGORIA */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#2e3514',
+                minWidth: 72,
+              }}
+            >
               Modelo:
             </span>
+
             {cats.map(c => (
               <button
                 key={c}
@@ -629,7 +677,10 @@ export default function Catalog({
                   borderRadius: 999,
                   fontSize: 12,
                   cursor: 'pointer',
-                  border: cat === c ? '1px solid #2e3514' : '1px solid #d7d2c4',
+                  border:
+                    cat === c
+                      ? '1px solid #2e3514'
+                      : '1px solid #d7d2c4',
                   background: cat === c ? '#2e3514' : '#ffffff',
                   color: cat === c ? '#f3efe6' : '#2e3514',
                   fontWeight: cat === c ? 700 : 500,
@@ -641,10 +692,25 @@ export default function Catalog({
           </div>
 
           {/* VALOR */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#2e3514', minWidth: 72 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#2e3514',
+                minWidth: 72,
+              }}
+            >
               Valor:
             </span>
+
             {(
               [
                 { id: 'all', label: 'Todos' },
@@ -666,8 +732,10 @@ export default function Catalog({
                     priceRange === opt.id
                       ? '1px solid #2e3514'
                       : '1px solid #d7d2c4',
-                  background: priceRange === opt.id ? '#2e3514' : '#ffffff',
-                  color: priceRange === opt.id ? '#f3efe6' : '#2e3514',
+                  background:
+                    priceRange === opt.id ? '#2e3514' : '#ffffff',
+                  color:
+                    priceRange === opt.id ? '#f3efe6' : '#2e3514',
                   fontWeight: priceRange === opt.id ? 700 : 500,
                 }}
               >
@@ -677,10 +745,25 @@ export default function Catalog({
           </div>
 
           {/* COR */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#2e3514', minWidth: 72 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#2e3514',
+                minWidth: 72,
+              }}
+            >
               Cor:
             </span>
+
             <button
               type="button"
               onClick={() => setSelectedColor('Todas')}
@@ -693,8 +776,10 @@ export default function Catalog({
                   selectedColor === 'Todas'
                     ? '1px solid #2e3514'
                     : '1px solid #d7d2c4',
-                background: selectedColor === 'Todas' ? '#2e3514' : '#ffffff',
-                color: selectedColor === 'Todas' ? '#f3efe6' : '#2e3514',
+                background:
+                  selectedColor === 'Todas' ? '#2e3514' : '#ffffff',
+                color:
+                  selectedColor === 'Todas' ? '#f3efe6' : '#2e3514',
                 fontWeight: selectedColor === 'Todas' ? 700 : 500,
               }}
             >
@@ -703,11 +788,14 @@ export default function Catalog({
 
             {uniqueColors.map(c => {
               const active = selectedColor === c.name
+
               return (
                 <button
                   key={c.name}
                   type="button"
-                  onClick={() => setSelectedColor(active ? 'Todas' : c.name)}
+                  onClick={() =>
+                    setSelectedColor(active ? 'Todas' : c.name)
+                  }
                   aria-pressed={active}
                   title={c.name}
                   style={{
@@ -755,8 +843,12 @@ export default function Catalog({
       {/* PRODUTOS */}
       <div className="p-grid">
         {list.map(p => {
-          const totalStock = Object.values(p.stock ?? {}).reduce(
-            (sum, quantity) => sum + quantity,
+          const colors = p.colors ?? []
+          const reviews = p.reviews ?? []
+          const stock = p.stock ?? {}
+
+          const totalStock = Object.values(stock).reduce(
+            (sum, quantity) => sum + (Number(quantity) || 0),
             0
           )
 
@@ -779,27 +871,27 @@ export default function Catalog({
               <button
                 type="button"
                 className={`fav ${
-                  favs.includes(p.id) ? 'on' : ''
+                  safeFavs.includes(p.id) ? 'on' : ''
                 }`}
                 onClick={() => toggleFav(p.id)}
                 aria-label="Favoritar"
-                aria-pressed={favs.includes(p.id)}
+                aria-pressed={safeFavs.includes(p.id)}
               >
-                {favs.includes(p.id) ? '♥' : '♡'}
+                {safeFavs.includes(p.id) ? '♥' : '♡'}
               </button>
 
               <h3>{p.name}</h3>
 
               <div className="m-rate">
                 <Stars value={avg(p)} />
-                <small>({p.reviews.length})</small>
+                <small>({reviews.length})</small>
               </div>
 
               <div className="p-foot">
                 <span className="price">{brl(p.price)}</span>
 
                 <span className="dots">
-                  {p.colors.map(c => (
+                  {colors.map(c => (
                     <i
                       key={c.name}
                       style={{ background: c.hex }}
