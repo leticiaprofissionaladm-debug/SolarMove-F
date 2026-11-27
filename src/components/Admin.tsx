@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import React from 'react'
 import { useStore, brl, stockKey } from '../store'
 import type { Product, Color, OrderStatus } from '../store'
-
+import AdminCustomers from '../pages/AdminCustomers' 
 import { getCategories } from '../services/categories'
 import type { Category } from '../services/categories'
 import { adminLogin } from '../services/auth'
@@ -1846,35 +1846,8 @@ export default function Admin({ onBackToStore }: AdminProps) {
           )}
 
           {/* CLIENTES */}
-          {activeTab === 'clientes' && (
-            <>
-              <div className="admin-page-heading">
-                <div>
-                  <span className="solar-highlight">
-                    SOLAR MOVE
-                  </span>
-
-                  <h2>Clientes</h2>
-
-                  <p>
-                    Área para acompanhar os cadastros e o
-                    relacionamento com as clientes.
-                  </p>
-                </div>
-              </div>
-
-              <div className="admin-content-card">
-                <h3>Gestão de clientes</h3>
-
-                <div className="admin-empty-state">
-                  A próxima etapa será conectar os cadastros
-                  das clientes aos pedidos para mostrar
-                  histórico de compras e informações de cada
-                  conta.
-                </div>
-              </div>
-            </>
-          )}
+          {activeTab === 'clientes' && <AdminCustomers />}
+        
 
           {/* RELATÓRIOS */}
           {activeTab === 'relatorios' && (
